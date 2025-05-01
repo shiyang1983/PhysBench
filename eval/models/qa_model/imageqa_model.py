@@ -90,6 +90,7 @@ imageqa_models = {
     "MolmoE-1B": ("MolmoE", "allenai/MolmoE-1B-0924"),
     "MolmoE-7B-O": ("MolmoE", "allenai/Molmo-7B-O-0924"),
     "MolmoE-7B-D": ("MolmoE", "allenai/Molmo-7B-D-0924"),
+    "MolmoE-72B": ("MolmoE", "allenai/Molmo-72B-0924"),
     "InternVL2-1B": ("InternVLChat2", "OpenGVLab/InternVL2-1B"),
     "InternVL2-2B": ("InternVLChat2", "OpenGVLab/InternVL2-2B"),
     "InternVL2-4B": ("InternVLChat2", "OpenGVLab/InternVL2-4B"),
@@ -2149,9 +2150,9 @@ class DeepSeekVL2(QAModelInstance):
         )
         self.tokenizer = self.vl_chat_processor.tokenizer
         vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
-            ckpt, trust_remote_code=True
+            ckpt, trust_remote_code=True, device_map="auto"
         )
-        self.vl_gpt = vl_gpt.to(torch.bfloat16).cuda().eval()
+        self.vl_gpt = vl_gpt.to(torch.bfloat16).eval()
 
     def qa(self, image, prompt):
         from deepseek_vl2.utils.io import load_pil_images
@@ -2176,7 +2177,7 @@ class DeepSeekVL2(QAModelInstance):
         pil_images = load_pil_images(conversation)
         prepare_inputs = self.vl_chat_processor(
             conversations=conversation, images=pil_images, force_batchify=True
-        ).to(self.vl_gpt.device)
+        ).to("cuda")
 
         # run image encoder to get the image embeddings
         inputs_embeds = self.vl_gpt.prepare_inputs_embeds(**prepare_inputs)
@@ -2206,7 +2207,8 @@ class DeepSeekVL2(QAModelInstance):
             use_cache=True,
         )
         answer = self.tokenizer.decode(
-            outputs[0][len(prepare_inputs.input_ids[0]) :].cpu().tolist(), skip_special_tokens=True
+            outputs[0][len(prepare_inputs.input_ids[0]) :].cpu().tolist(),
+            skip_special_tokens=True,
         )
         cprint(answer, "cyan")
         return answer

@@ -265,7 +265,7 @@ class PhysionBenchEvaluator:
                 "MolmoE-1B",
                 "MolmoE-7B-O",
                 "MolmoE-7B-D",
-                "allenai/Molmo-72B-0924",
+                "MolmoE-72B" "allenai/Molmo-72B-0924",
             ]:
                 if visuals[0].endswith(".mp4"):
                     combined_image = self._concat_video(visuals[0])
